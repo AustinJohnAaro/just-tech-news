@@ -1,11 +1,17 @@
 const router = require('express').Router();
-const  User  = require('../../models');
+const { User, Post, Vote } = require("../../models"); 
 const router = require('express').Router();
 const { Post, User } = require('../../models'); 
 
 // get all users
 Post.findAll({
-  attributes: ['id', 'post_url', 'title', 'created_at'],
+  attributes: [
+    'id',
+    'post_url',
+    'title',
+    'created_at',
+    [sequelize.literal('(SELECT COUNT(*) FROM vote WHERE post.id = vote.post_id)'), 'vote_count']
+  ], 
   order: [['created_at', 'DESC']], 
   include: [
     {
@@ -76,21 +82,30 @@ router.get('/', (req, res) => {
 router.get('/:id', (req, res) => {
   User.findOne({
     attributes: { exclude: ['password'] },
-    where: {
-      id: req.params.id
-    }
-  })
-    .then(dbUserData => {
-      if (!dbUserData) {
-        res.status(404).json({ message: 'No user found with this id' });
-        return;
+  where: {
+    id: req.params.id
+  },
+  include: [
+    {
+      model: Post,
+      attributes: ['id', 'title', 'post_url', 'created_at']
+    },
+    // include the Comment model here:
+    {
+      model: Comment,
+      attributes: ['id', 'comment_text', 'created_at'],
+      include: {
+        model: Post,
+        attributes: ['title']
       }
-      res.json(dbUserData);
-    })
-    .catch(err => {
-      console.log(err);
-      res.status(500).json(err);
-    }); 
+    },
+    {
+      model: Post,
+      attributes: ['title'],
+      through: Vote,
+      as: 'voted_posts'
+    }
+  ]
   }); 
 
 // POST /api/users
