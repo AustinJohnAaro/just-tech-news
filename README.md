@@ -1,1 +1,0 @@
-say it with your chest! Put the stake in the pan ! Stand up strait when you are talking to me! 
